@@ -1,0 +1,12 @@
+{
+  "name": "kota-agent-skills",
+  "owner": {
+    "name": "Kota",
+    "email": "opensource@kota.com"
+  },
+  "metadata": {
+    "description": "Open-source Agent Skills used at Kota",
+    "version": "0.0.0"
+  },
+  "plugins": []
+}
