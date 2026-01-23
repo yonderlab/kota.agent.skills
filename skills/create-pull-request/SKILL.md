@@ -114,9 +114,10 @@ git log main..HEAD --oneline
 
 Understand:
 
-- What changed (files, features, fixes)
-- Why it changed (problem being solved)
-- How to test it
+- What user problem or product need does this solve?
+- How does this improve the experience, product capability, or team efficiency?
+- What is the impact or value of this change?
+- How to test and verify the improvement
 
 ### 2. Determine PR type
 
@@ -146,7 +147,7 @@ Create a description following this structure:
 ```markdown
 ## About PR 📝
 
-[2-3 sentences describing what changed and why. Must be substantive - cannot be empty or just comments]
+[2-3 sentences explaining how this change helps users, the product, or the team. Focus on the value and impact, not implementation details. Must be substantive - cannot be empty or just comments]
 
 ## Preview (screenshot or recording) 🖼️
 
