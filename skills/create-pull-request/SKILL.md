@@ -16,7 +16,7 @@ requirements:
 
 # Create Pull Request
 
-Create a well-structured pull request that follows the team's PR template requirements and passes automated validation.
+Create a well-structured pull request that follows the team's PR template requirements and validation guidelines.
 
 ## Preconditions
 
@@ -138,7 +138,9 @@ For Bug fix, New feature, Refactor, or Improvement:
 
 - Ask the user to provide a screenshot, recording, or link
 - Verify the format is acceptable (see acceptable formats above)
-- If the user cannot provide visual proof, warn them that validation will fail
+- If the user cannot provide visual proof, warn them that:
+  - Automated validation (if present) will fail
+  - Manual review will require justification for missing visual proof
 
 ### 4. Draft the PR description
 
@@ -204,18 +206,31 @@ EOF
 After creation:
 
 - Display the PR URL to the user
-- Note that GitHub Actions will automatically validate the PR description
-- If validation fails, the user can edit the PR description on GitHub
+- If the repository has automated PR validation (e.g., `scripts/validate-pr-description.js`), note that GitHub Actions will validate the PR description
+- Remind the user to review the PR checklist manually if no automated validation exists
+- The PR can be edited on GitHub if any issues are found
 
-## Validation Script Reference
+## Validation Reference
 
-The repository includes `scripts/validate-pr-description.js` which:
+### Automated Validation (if available)
+
+Some repositories include automated PR validation (e.g., `scripts/validate-pr-description.js`) which:
 
 - Checks "About PR" is filled (not empty or just comments)
 - Verifies at least one type is selected
 - Ensures visual proof exists for applicable types
 - Returns exit code 1 for blocking failures (New feature, Improvement)
 - Returns exit code 1 for warnings (other types with missing requirements)
+
+### Manual Validation Checklist
+
+If no automated validation exists, verify the PR includes:
+
+1. ✅ **About PR section** - Substantive content explaining value/impact (not empty, not just HTML comments)
+2. ✅ **Type of change** - At least one checkbox selected
+3. ✅ **Visual proof** (if applicable) - Screenshot/recording/link for: Bug fix, New feature, Refactor, Improvement
+4. ✅ **Testing instructions** - Clear steps for reviewers to verify the changes
+5. ✅ **Meaningful title** - Concise, verb-first description of the change
 
 ## Notes
 
@@ -234,4 +249,5 @@ The repository includes `scripts/validate-pr-description.js` which:
   - Visual proof (if required by type)
   - Appropriate type selection
 - The PR is ready for team review
-- Automated validation will run and provide feedback
+- If automated validation exists, it will run and provide feedback
+- Otherwise, reviewers will manually verify the PR meets requirements
