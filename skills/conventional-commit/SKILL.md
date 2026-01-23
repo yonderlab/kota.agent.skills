@@ -1,6 +1,6 @@
 ---
 name: conventional-commit
-description: Create one or more Conventional Commits using Commitizen and push the current branch.
+description: Create one or more Conventional Commits using Commitizen and push the current branch. Use when the user asks to create commits, write a conventional commit message, use Commitizen (cz), or commit and push changes.
 version: 1.1.0
 author: Engineering
 tags:
