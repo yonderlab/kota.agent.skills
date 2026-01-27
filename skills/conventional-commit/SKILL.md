@@ -1,124 +1,145 @@
 ---
 name: conventional-commit
-description: Create one or more Conventional Commits using Commitizen and push the current branch. Use when the user asks to create commits, write a conventional commit message, use Commitizen (cz), commit and push changes, or prepare commits before opening a pull request.
-version: 1.1.0
-author: Engineering
-tags:
-  - git
-  - conventional-commits
-  - commitizen
-  - release-hygiene
-requirements:
-  tools:
-    - git
-    - node
+description: Create one or more Conventional Commits following the spec and push the current branch. Use when the user asks to create commits, write a conventional commit message, commit and push changes, or prepare commits before opening a pull request.
+license: MIT
+metadata:
+  author: kota
+  version: "1.2.0"
 ---
 
 # Conventional Commit
 
-Create one or more well-structured Conventional Commits using Commitizen, enforcing branch naming rules and safe commit practices, then push the branch to the remote.
+Follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) for all commits.
 
 ## Preconditions
 
-### Validate current branch
+### Validate branch
 
-Run:
+Run `git rev-parse --abbrev-ref HEAD`.
 
-git rev-parse --abbrev-ref HEAD
+If on `main` or `master`, stop and ask the user to create a feature branch.
 
-If the branch is `main` or `master`:
+Branch names should follow: `<TICKET_PREFIX>-<number>-<kebab-case-description>` (e.g., `ENG-1333-migrate-review-flow`). If invalid, ask the user to rename the branch.
 
-- Stop
-- Ask the user to create a feature branch tied to a work item (Linear, Jira, etc.)
+## Conventional Commits Spec
 
-### Validate branch naming
-
-Branch names must follow this pattern:
+The commit message format:
 
 ```
-<TICKET_PREFIX>-<number>-<kebab-case-description>
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
 ```
 
-Examples:
+### Types (required)
 
-ENG-1333-migrate-review-and-confirm-flow
-PLAT-42-add-rate-limit-middleware
-CORE-901-refactor-auth-session-handling
+| Type | Purpose |
+|------|---------|
+| `feat` | A new feature (correlates with MINOR in SemVer) |
+| `fix` | A bug fix (correlates with PATCH in SemVer) |
+| `docs` | Documentation only changes |
+| `style` | Changes that do not affect meaning (whitespace, formatting) |
+| `refactor` | Code change that neither fixes a bug nor adds a feature |
+| `perf` | Code change that improves performance |
+| `test` | Adding or correcting tests |
+| `build` | Changes to build system or external dependencies |
+| `ci` | Changes to CI configuration files and scripts |
+| `chore` | Other changes that don't modify src or test files |
 
-Rules:
+### Scope (optional)
 
-- TICKET_PREFIX must be uppercase letters only (A-Z)
-- Number must be numeric
-- Description must be lowercase kebab-case
+A noun describing the section of codebase affected, in parentheses:
 
-If the branch name does not match:
+- `feat(parser): add ability to parse arrays`
+- `fix(auth): resolve token expiration bug`
 
-- Stop
-- Ask the user to rename the branch before continuing
+### Breaking Changes
 
-This rule is intentionally team-agnostic while enforcing traceability.
+Append `!` after type/scope OR add `BREAKING CHANGE:` footer:
 
-## Bootstrap Commitizen
+```
+feat(api)!: remove deprecated endpoints
 
-Ensure Commitizen is available locally for the repository.
+BREAKING CHANGE: The /v1/users endpoint has been removed. Use /v2/users instead.
+```
 
-Check for Commitizen:
-
-node_modules/.bin/cz
-
-If missing, install locally:
-
-npm install --no-save commitizen cz-conventional-changelog
-
-This avoids global installs and keeps the skill self-contained.
+Breaking changes correlate with MAJOR in SemVer.
 
 ## Steps
 
-1. Review the current state
+1. Review current state
 
+   ```bash
    git status
    git diff
    git log -1 --oneline
+   ```
 
-2. Group changes logically
-
-   - Identify distinct concerns that should become separate commits
-   - Prefer multiple small commits over a single large commit
+2. Group changes logically - prefer multiple small commits over one large commit
 
 3. Create commits
 
    For each logical group:
+   - Stage relevant files or hunks
+   - Commit using Conventional Commit format
 
-   - Stage only the relevant files or hunks
-   - Run:
+   **Option A**: Use git commit directly (recommended for agents):
 
-     npx cz
+   ```bash
+   git commit -m "feat(auth): add OAuth2 support"
+   ```
 
-   - Follow the prompts to produce a valid Conventional Commit:
-     - type (feat, fix, chore, etc.)
-     - optional scope
-     - clear, concise description
-     - breaking change or footer metadata if applicable
+   Multi-line with body:
+
+   ```bash
+   git commit -m "feat(api): add pagination to list endpoints" \
+     -m "Implements cursor-based pagination for all list endpoints." \
+     -m "BREAKING CHANGE: Response format changed from array to object with data/meta keys."
+   ```
+
+   **Option B**: Use `git-cz` non-interactive mode (streamich/git-cz, not standard cz):
+
+   ```bash
+   npx git-cz --non-interactive --type=feat --scope=auth --subject="add OAuth2 support"
+   ```
+
+   With body/breaking changes:
+
+   ```bash
+   npx git-cz --non-interactive \
+     --type=feat \
+     --scope=api \
+     --subject="add pagination to list endpoints" \
+     --body="Implements cursor-based pagination for all list endpoints" \
+     --breaking="Response format changed from array to object with data/meta keys"
+   ```
+
+   > **Note**: The standard `npx cz` (commitizen/cz-cli) is interactive-only and cannot be used by agents. Use `git commit` or `npx git-cz --non-interactive` instead.
 
 4. Push the branch
 
-   If no upstream is set:
+   ```bash
+   git push -u origin HEAD  # if no upstream
+   git push                 # otherwise
+   ```
 
-   git push -u origin HEAD
+## Commit Message Guidelines
 
-   Otherwise:
-
-   git push
+- **Description**: Use imperative mood ("add" not "added" or "adds")
+- **Description**: Lowercase, no period at end
+- **Body**: Explain what and why, not how
+- **Footer**: Reference issues (`Fixes #123`, `Closes #456`)
 
 ## Notes
 
 - Do not commit secrets, credentials, or environment files
-- Commit messages should describe intent and impact, not implementation detail
+- Describe intent and impact, not implementation detail
 - When in doubt, split commits
 - This skill does not perform rebases, squashes, or force pushes
 
-## Outcome
+## References
 
-- Commits conform to the Conventional Commits specification
-- History is suitable for automated changelogs and semantic versioning
-- The branch is pushed and ready for review
+- [Conventional Commits Specification](https://www.conventionalcommits.org/en/v1.0.0/)
+- [git-cz (non-interactive mode)](https://github.com/streamich/git-cz)
