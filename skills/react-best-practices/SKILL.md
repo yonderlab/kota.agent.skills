@@ -4,7 +4,7 @@ description: Apply React best practices when writing or reviewing React code. Us
 license: MIT
 metadata:
   author: kota
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # React Best Practices
@@ -30,7 +30,7 @@ When writing or reviewing React code:
 5. **Validate keys** - Ensure list keys are stable and unique (not index or random)
 6. **Review TypeScript** - Props have explicit interfaces, no `any` types
 7. **Check accessibility** - Semantic HTML, focus management, keyboard support
-8. **Profile if needed** - Only add memoization after measuring performance
+8. **Profile if needed** - Only add memoization after measuring; consider `useTransition`/`useDeferredValue` first
 
 ## Examples
 
@@ -531,6 +531,152 @@ const handleClick = useCallback((id: string) => {
 }, []);
 
 return <MemoizedList items={items} onItemClick={handleClick} />;
+```
+
+### Concurrent Rendering for Expensive Updates
+
+For expensive state updates, prefer concurrent features over aggressive memoization:
+
+```tsx
+const [isPending, startTransition] = useTransition();
+
+function handleFilter(value: string) {
+  setInputValue(value); // Urgent: update input immediately
+
+  startTransition(() => {
+    setFilteredItems(expensiveFilter(items, value)); // Non-blocking
+  });
+}
+
+return (
+  <>
+    <input value={inputValue} onChange={e => handleFilter(e.target.value)} />
+    {isPending && <Spinner />}
+    <ItemList items={filteredItems} />
+  </>
+);
+```
+
+See the Concurrent Rendering section below for full details on `useTransition` and `useDeferredValue`.
+
+## Concurrent Rendering
+
+React 18 introduced concurrent features for keeping the UI responsive during expensive updates.
+
+### useTransition
+
+Mark state updates as non-blocking so user interactions aren't delayed:
+
+```tsx
+const [isPending, startTransition] = useTransition();
+
+function handleTabChange(tab: string) {
+  startTransition(() => {
+    setActiveTab(tab); // Can be interrupted by more urgent updates
+  });
+}
+
+return (
+  <>
+    <TabBar activeTab={activeTab} onChange={handleTabChange} />
+    {isPending ? <TabSkeleton /> : <TabContent tab={activeTab} />}
+  </>
+);
+```
+
+**Use cases:**
+- Search/filter with expensive result rendering
+- Tab switching with heavy content
+- Any state update causing expensive re-renders
+
+### useDeferredValue
+
+Defer expensive derived values when you don't control the state setter:
+
+```tsx
+function SearchResults({ query }: { query: string }) {
+  const deferredQuery = useDeferredValue(query);
+  const isStale = query !== deferredQuery;
+
+  return (
+    <div style={{ opacity: isStale ? 0.7 : 1 }}>
+      <ExpensiveList query={deferredQuery} />
+    </div>
+  );
+}
+```
+
+**When to use:**
+- Props from parent that change frequently
+- Alternative to debouncing for render performance
+- Showing stale content while fresh content loads
+
+### useTransition vs useDeferredValue
+
+| Scenario | Use |
+|----------|-----|
+| You control the state setter | `useTransition` |
+| Value comes from props | `useDeferredValue` |
+| Need `isPending` indicator | `useTransition` |
+| Deferring derived/computed values | `useDeferredValue` |
+
+### When NOT to Use
+
+Don't use concurrent features for:
+- Controlled input values (causes typing lag)
+- Quick/cheap state updates
+- State that must stay synchronized
+
+## Code Splitting
+
+Split code into smaller bundles that load on demand.
+
+### React.lazy with Suspense
+
+```tsx
+import { lazy, Suspense } from "react";
+
+const Dashboard = lazy(() => import("./Dashboard"));
+
+function App() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <Dashboard />
+    </Suspense>
+  );
+}
+```
+
+### Route-Based Splitting (Preferred)
+
+React Router's `lazy` option loads routes in parallel, avoiding waterfalls:
+
+```tsx
+const router = createBrowserRouter([
+  { path: "/", element: <Home /> },
+  { path: "/dashboard", lazy: () => import("./Dashboard") },
+  { path: "/settings", lazy: () => import("./Settings") }
+]);
+```
+
+This is preferred over `React.lazy` for routes because:
+- Routes load in parallel before rendering
+- `React.lazy` only fetches when the component renders (waterfall)
+
+### Suspense for Loading States
+
+Use nested Suspense boundaries for progressive loading:
+
+```tsx
+<Suspense fallback={<PageSkeleton />}>
+  <Header />
+  <Suspense fallback={<ContentSkeleton />}>
+    <MainContent />
+  </Suspense>
+  <Suspense fallback={<SidebarSkeleton />}>
+    <Sidebar />
+  </Suspense>
+</Suspense>
 ```
 
 ## Error Handling

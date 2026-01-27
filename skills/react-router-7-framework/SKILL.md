@@ -1,10 +1,10 @@
 ---
 name: react-router-7-framework
-description: Apply React Router 7 framework mode best practices including server-first data fetching, type-safe loaders/actions, proper hydration strategies, middleware authentication, handle metadata, useMatches/useRouteLoaderData hooks, and maximum type safety. Use when working with React Router 7 framework mode, implementing loaders, actions, route protection, breadcrumbs, streaming with Suspense/Await, URL search params, or building SSR applications.
+description: Apply React Router 7 framework mode best practices including server-first data fetching, type-safe loaders/actions, proper hydration strategies, middleware authentication, handle metadata, useMatches/useRouteLoaderData hooks, and maximum type safety. Use when working with React Router 7 framework mode, implementing loaders, actions, route protection, breadcrumbs, streaming with Suspense/Await, URL search params, form validation, optimistic UI, resource routes (API endpoints), route configuration, or building SSR applications.
 license: MIT
 metadata:
   author: kota
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # React Router 7 Framework Mode Best Practices
@@ -19,7 +19,22 @@ This skill targets **React Router 7.9.0+** in framework mode. Key features by ve
 | v7.5 | `href()` utility for type-safe links |
 | v7.9+ | Stable middleware and context APIs, v8 future flags |
 
-> **Note**: Enable v8 features with `future.v8_middleware: true` and `future.v8_splitRouteModules: true` in your config. These will become the default in v8.
+### Future Flags
+
+Enable v8 features in `react-router.config.ts`:
+
+```typescript
+import type { Config } from "@react-router/dev/config";
+
+export default {
+  future: {
+    v8_middleware: true,        // Middleware support
+    v8_splitRouteModules: true, // Route module splitting for performance
+  },
+} satisfies Config;
+```
+
+These will become the default in v8.
 
 ## Core Principles
 
@@ -28,6 +43,30 @@ This skill targets **React Router 7.9.0+** in framework mode. Key features by ve
 3. **Proper Hydration**: Understand when to use `clientLoader.hydrate = true` and when to skip it
 4. **Declarative Data**: Colocate data requirements with routes using loaders
 5. **Progressive Enhancement**: Use actions for mutations with automatic revalidation
+
+## Route Configuration
+
+Define routes in `app/routes.ts` using helper functions:
+
+```typescript
+import type { RouteConfig } from "@react-router/dev/routes";
+import { route, index, layout, prefix } from "@react-router/dev/routes";
+
+export default [
+  index("./home.tsx"),
+  route("about", "./about.tsx"),
+  layout("./auth-layout.tsx", [
+    route("login", "./login.tsx"),
+    route("register", "./register.tsx"),
+  ]),
+  ...prefix("api", [
+    route("users", "./api/users.tsx"),
+  ]),
+  route("*", "./not-found.tsx"), // Catch-all 404
+] satisfies RouteConfig;
+```
+
+**See [references/routes-config.md](references/routes-config.md) for layout routes, Outlet, splat routes, custom IDs, and nested route patterns.**
 
 ## Type Safety
 
@@ -796,6 +835,67 @@ import { Form } from "react-router";
 </Form>
 ```
 
+**See [references/forms.md](references/forms.md) for form validation patterns, optimistic UI, and pending states.**
+
+### useParams
+
+Access route parameters in components:
+
+```typescript
+import { useParams } from "react-router";
+
+function ProductDetail() {
+  const { productId } = useParams();
+  return <div>Product: {productId}</div>;
+}
+```
+
+**Note**: In route modules, prefer accessing params from `Route.ComponentProps` or `Route.LoaderArgs`.
+
+### useRevalidator
+
+Manually trigger data revalidation:
+
+```typescript
+import { useRevalidator } from "react-router";
+
+function RefreshButton() {
+  const revalidator = useRevalidator();
+
+  return (
+    <button
+      onClick={() => revalidator.revalidate()}
+      disabled={revalidator.state === "loading"}
+    >
+      {revalidator.state === "loading" ? "Refreshing..." : "Refresh"}
+    </button>
+  );
+}
+```
+
+**Use cases**: Polling, window focus refresh, manual refresh buttons.
+
+### useNavigate
+
+Programmatic navigation without user interaction:
+
+```typescript
+import { useNavigate } from "react-router";
+
+function LogoutButton() {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login", { replace: true });
+  };
+
+  return <button onClick={handleLogout}>Logout</button>;
+}
+```
+
+**See [references/navigation.md](references/navigation.md) for navigation options, Outlet, and redirect patterns.**
+
 ## URL Search Params
 
 For filters, pagination, search, and shareable UI state.
@@ -1091,6 +1191,33 @@ export default function Products({ loaderData }: Route.ComponentProps) {
 }
 ```
 
+## Resource Routes (API Endpoints)
+
+Resource routes serve non-UI responses (JSON, PDF, webhooks). A route is a resource route when it exports `loader`/`action` but **no default component**:
+
+```typescript
+// app/routes/api.users.tsx
+export async function loader() {
+  const users = await db.getUsers();
+  return Response.json(users);
+}
+
+export async function action({ request }: Route.ActionArgs) {
+  const data = await request.json();
+  const user = await db.createUser(data);
+  return Response.json(user, { status: 201 });
+}
+// No default export = resource route
+```
+
+Link with `reloadDocument` to prevent client-side routing:
+
+```typescript
+<Link reloadDocument to="/api/report.pdf">Download PDF</Link>
+```
+
+**See [references/resource-routes.md](references/resource-routes.md) for HTTP method handling, file serving, and webhook patterns.**
+
 ## Decision Tree
 
 ```
@@ -1148,24 +1275,35 @@ Before completing any React Router 7 implementation:
 - [ ] `shouldRevalidate` considered for performance-critical loaders
 - [ ] Server-only code uses `.server.ts` naming convention
 - [ ] Secrets and database clients never imported in client-accessible modules
+- [ ] Routes configured in `routes.ts` with appropriate helpers (`route`, `index`, `layout`, `prefix`)
+- [ ] Resource routes (API endpoints) export no default component
+- [ ] Form validation returns errors with `data({ errors }, { status: 400 })`
+- [ ] Optimistic UI uses `fetcher.formData` for immediate feedback
 
-## References
+## Bundled References
+
+- [routes-config.md](references/routes-config.md) - Route configuration, helpers, Outlet, splats
+- [navigation.md](references/navigation.md) - Redirects, useNavigate, Outlet context
+- [forms.md](references/forms.md) - Validation, optimistic UI, pending states
+- [resource-routes.md](references/resource-routes.md) - API endpoints, webhooks, file serving
+- [middleware.md](references/middleware.md) - Authentication, context API, execution order
+- [search-params.md](references/search-params.md) - Pagination, filtering, type-safe parsing
+- [streaming.md](references/streaming.md) - Suspense, Await, deferred data
+
+## External References
 
 - [React Router Documentation](https://reactrouter.com/)
+- [Routing Guide](https://reactrouter.com/start/framework/routing)
 - [Type Safety Guide](https://reactrouter.com/explanation/type-safety)
 - [Data Loading](https://reactrouter.com/start/framework/data-loading)
 - [Actions](https://reactrouter.com/start/framework/actions)
+- [Form Validation](https://reactrouter.com/how-to/form-validation)
+- [Resource Routes](https://reactrouter.com/how-to/resource-routes)
 - [Client Data Patterns](https://reactrouter.com/how-to/client-data)
 - [Streaming & Suspense](https://reactrouter.com/how-to/suspense)
-- [Await Component](https://reactrouter.com/components/await)
 - [Middleware Guide](https://reactrouter.com/how-to/middleware)
 - [Using handle](https://reactrouter.com/how-to/using-handle)
-- [URL Values & Search Params](https://reactrouter.com/start/declarative/url-values)
-- [useSearchParams Hook](https://reactrouter.com/api/hooks/useSearchParams)
-- [useMatches Hook](https://reactrouter.com/api/hooks/useMatches)
-- [useRouteLoaderData Hook](https://reactrouter.com/api/hooks/useRouteLoaderData)
-- [useAsyncValue Hook](https://reactrouter.com/api/hooks/useAsyncValue)
-- [useAsyncError Hook](https://reactrouter.com/api/hooks/useAsyncError)
+- [Pending UI](https://reactrouter.com/start/framework/pending-ui)
 
 ## Key Notes
 
