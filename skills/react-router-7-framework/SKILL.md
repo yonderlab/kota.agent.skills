@@ -1,46 +1,13 @@
 ---
 name: react-router-7-framework
-description: Apply React Router 7 framework mode best practices including server-first data fetching, type-safe loaders/actions, proper hydration strategies, middleware authentication, handle metadata, useMatches/useRouteLoaderData hooks, and maximum type safety. Use when working with React Router 7 framework mode, implementing loaders, actions, route protection, breadcrumbs, or building SSR applications.
-version: 1.0.0
-author: kota
-tags:
-  - react-router
-  - react-router-7
-  - typescript
-  - ssr
-  - data-loading
-  - type-safety
-  - framework-mode
-  - middleware
-  - authentication
-requirements:
-  tools:
-    - node
-    - npm
+description: Apply React Router 7 framework mode best practices including server-first data fetching, type-safe loaders/actions, proper hydration strategies, middleware authentication, handle metadata, useMatches/useRouteLoaderData hooks, and maximum type safety. Use when working with React Router 7 framework mode, implementing loaders, actions, route protection, breadcrumbs, streaming with Suspense/Await, URL search params, or building SSR applications.
+license: MIT
+metadata:
+  author: kota
+  version: "1.1.0"
 ---
 
 # React Router 7 Framework Mode Best Practices
-
-Apply React Router 7 framework mode patterns emphasizing server-first data fetching, maximum type safety, and proper use of loaders, actions, and utilities.
-
-## When To Use
-
-Use this skill when:
-
-- Setting up or working with React Router 7 in framework mode
-- Implementing data loaders or actions
-- Adding type safety to route modules
-- Deciding between server-side and client-side data fetching
-- Implementing mutations with actions
-- Optimizing hydration strategies
-- Working with SSR or pre-rendering in React Router 7
-- Streaming non-critical data with promises and skeleton UI
-- Managing URL state with search params (filtering, pagination, search)
-- Accessing parent route data with useRouteLoaderData
-- Building breadcrumbs or navigation with useMatches and handle
-- Implementing authentication or route protection with middleware
-- Sharing data between middleware and loaders with context API
-- Adding route metadata for breadcrumbs, titles, or analytics
 
 ## Version Compatibility
 
@@ -829,40 +796,19 @@ import { Form } from "react-router";
 </Form>
 ```
 
-## URL Search Params (Query Parameters)
+## URL Search Params
 
-Search params (query parameters) are the values after `?` in a URL. They're ideal for storing UI state that should be shareable, bookmarkable, and persistent across reloads.
+For filters, pagination, search, and shareable UI state.
 
-### When to Use Search Params
-
-Use search params for:
-- **Filtering and sorting**: Product filters, table sorting
-- **Pagination**: Page numbers, page size
-- **Search queries**: Search terms, autocomplete
-- **View state**: Active tab, selected item, modal state
-- **Shareable state**: Any state that makes the URL meaningful when shared
-
-**Don't use search params for**:
-- Sensitive data (credentials, tokens)
-- Large amounts of data (use loaders instead)
-- Temporary UI state (modals, tooltips - use component state)
-
-### useSearchParams Hook
-
-Read and update search params on the client:
+Quick example:
 
 ```typescript
 import { useSearchParams } from "react-router";
 
 export default function ProductList() {
   const [searchParams, setSearchParams] = useSearchParams();
-
-  // Read params
   const category = searchParams.get("category") || "all";
-  const sort = searchParams.get("sort") || "name";
-  const page = parseInt(searchParams.get("page") || "1", 10);
 
-  // Update params
   const handleCategoryChange = (newCategory: string) => {
     setSearchParams((prev) => {
       prev.set("category", newCategory);
@@ -871,354 +817,22 @@ export default function ProductList() {
     });
   };
 
-  return (
-    <div>
-      <select value={category} onChange={(e) => handleCategoryChange(e.target.value)}>
-        <option value="all">All</option>
-        <option value="electronics">Electronics</option>
-        <option value="books">Books</option>
-      </select>
-      {/* Product list */}
-    </div>
-  );
+  return (/* ... */);
 }
 ```
 
-### Reading Search Params in Loaders (Server-Side)
-
-Access search params in loaders to fetch filtered data server-side:
+In loaders:
 
 ```typescript
-import type { Route } from "./+types/products";
-
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
-  const searchParams = url.searchParams;
-
-  // Extract params
-  const category = searchParams.get("category") || "all";
-  const sort = searchParams.get("sort") || "name";
-  const page = parseInt(searchParams.get("page") || "1", 10);
-  const query = searchParams.get("q") || "";
-
-  // Fetch filtered data
-  const products = await db.getProducts({
-    category: category !== "all" ? category : undefined,
-    sort,
-    page,
-    query,
-  });
-
-  return { products, category, sort, page, query };
-}
-
-export default function Products({ loaderData }: Route.ComponentProps) {
-  const { products, query } = loaderData;
-
-  return (
-    <div>
-      <Form role="search">
-        <input
-          type="search"
-          name="q"
-          defaultValue={query}
-          placeholder="Search products..."
-        />
-        <button type="submit">Search</button>
-      </Form>
-      <ProductGrid products={products} />
-    </div>
-  );
+  const category = url.searchParams.get("category") || "all";
+  const products = await db.getProducts({ category });
+  return { products, category };
 }
 ```
 
-**Key pattern**: Return search param values from the loader so you can use them as `defaultValue` in form inputs. This keeps the form in sync with the URL on page refresh.
-
-### Updating Search Params
-
-Multiple ways to set search params:
-
-```typescript
-const [searchParams, setSearchParams] = useSearchParams();
-
-// 1. String
-setSearchParams("?category=books&sort=price");
-
-// 2. Object (most common)
-setSearchParams({ category: "books", sort: "price" });
-
-// 3. Array values for multiple values
-setSearchParams({ tags: ["react", "typescript"] });
-
-// 4. Array of tuples
-setSearchParams([["category", "books"], ["sort", "price"]]);
-
-// 5. URLSearchParams object
-setSearchParams(new URLSearchParams("?category=books"));
-
-// 6. Functional update (like useState)
-setSearchParams((prev) => {
-  prev.set("page", "2");
-  return prev;
-});
-
-// 7. With navigation options
-setSearchParams({ category: "books" }, { replace: true }); // Don't add to history
-```
-
-### Pagination Pattern
-
-Complete pagination example with search params:
-
-```typescript
-import { useSearchParams, Form } from "react-router";
-import type { Route } from "./+types/products";
-
-export async function loader({ request }: Route.LoaderArgs) {
-  const url = new URL(request.url);
-  const page = parseInt(url.searchParams.get("page") || "1", 10);
-  const pageSize = 20;
-
-  const { products, total } = await db.getProducts({
-    page,
-    pageSize,
-  });
-
-  return {
-    products,
-    page,
-    totalPages: Math.ceil(total / pageSize),
-  };
-}
-
-export default function Products({ loaderData }: Route.ComponentProps) {
-  const { products, page, totalPages } = loaderData;
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const goToPage = (newPage: number) => {
-    setSearchParams({ page: newPage.toString() });
-  };
-
-  return (
-    <div>
-      <ProductGrid products={products} />
-      <div>
-        <button
-          disabled={page === 1}
-          onClick={() => goToPage(page - 1)}
-        >
-          Previous
-        </button>
-        <span>
-          Page {page} of {totalPages}
-        </span>
-        <button
-          disabled={page === totalPages}
-          onClick={() => goToPage(page + 1)}
-        >
-          Next
-        </button>
-      </div>
-    </div>
-  );
-}
-```
-
-### Filtering with Form Pattern
-
-Use `<Form>` with GET method for automatic search param updates:
-
-```typescript
-import { Form } from "react-router";
-import type { Route } from "./+types/products";
-
-export async function loader({ request }: Route.LoaderArgs) {
-  const url = new URL(request.url);
-  const category = url.searchParams.get("category");
-  const minPrice = url.searchParams.get("minPrice");
-  const maxPrice = url.searchParams.get("maxPrice");
-
-  const products = await db.getProducts({
-    category,
-    minPrice: minPrice ? parseFloat(minPrice) : undefined,
-    maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
-  });
-
-  return { products, category, minPrice, maxPrice };
-}
-
-export default function Products({ loaderData }: Route.ComponentProps) {
-  const { products, category, minPrice, maxPrice } = loaderData;
-
-  return (
-    <div>
-      <Form method="get">
-        <select name="category" defaultValue={category || ""}>
-          <option value="">All Categories</option>
-          <option value="electronics">Electronics</option>
-          <option value="books">Books</option>
-        </select>
-
-        <input
-          type="number"
-          name="minPrice"
-          placeholder="Min Price"
-          defaultValue={minPrice || ""}
-        />
-
-        <input
-          type="number"
-          name="maxPrice"
-          placeholder="Max Price"
-          defaultValue={maxPrice || ""}
-        />
-
-        <button type="submit">Filter</button>
-      </Form>
-
-      <ProductGrid products={products} />
-    </div>
-  );
-}
-```
-
-**Important**: Use `<Form method="get">` (not POST) so form submission updates search params instead of triggering an action.
-
-### Type-Safe Search Params
-
-Validate and parse search params with type guards:
-
-```typescript
-import type { Route } from "./+types/products";
-
-// Define allowed values
-const SORT_OPTIONS = ["name", "price", "date"] as const;
-type SortOption = typeof SORT_OPTIONS[number];
-
-const CATEGORIES = ["all", "electronics", "books", "clothing"] as const;
-type Category = typeof CATEGORIES[number];
-
-function parseSort(value: string | null): SortOption {
-  if (value && SORT_OPTIONS.includes(value as SortOption)) {
-    return value as SortOption;
-  }
-  return "name"; // Default
-}
-
-function parseCategory(value: string | null): Category {
-  if (value && CATEGORIES.includes(value as Category)) {
-    return value as Category;
-  }
-  return "all"; // Default
-}
-
-export async function loader({ request }: Route.LoaderArgs) {
-  const url = new URL(request.url);
-  const searchParams = url.searchParams;
-
-  const sort = parseSort(searchParams.get("sort"));
-  const category = parseCategory(searchParams.get("category"));
-  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-
-  const products = await db.getProducts({ sort, category, page });
-
-  return { products, sort, category, page };
-}
-```
-
-### Best Practices
-
-1. **URL as Source of Truth**: Always read from search params, don't duplicate in component state
-2. **Return Params from Loader**: Return search param values so you can use them as `defaultValue` in forms
-3. **Reset Dependent Params**: When changing filters, reset page to 1
-4. **Validate and Parse**: Always validate/parse search params with defaults for invalid values
-5. **Use GET Forms**: Use `<Form method="get">` for filters - it automatically updates search params
-6. **Functional Updates**: Use `setSearchParams((prev) => ...)` when updating multiple params
-7. **Type Safety**: Create parse functions with type guards for allowed values
-8. **Don't Over-Use**: Not everything belongs in the URL - use component state for temporary UI
-
-### Common Patterns
-
-**Debounced Search Input**:
-
-```typescript
-import { useSearchParams } from "react-router";
-import { useDebouncedCallback } from "use-debounce";
-
-export default function SearchBar() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const query = searchParams.get("q") || "";
-
-  const handleSearch = useDebouncedCallback((value: string) => {
-    setSearchParams((prev) => {
-      if (value) {
-        prev.set("q", value);
-      } else {
-        prev.delete("q");
-      }
-      prev.set("page", "1"); // Reset page
-      return prev;
-    });
-  }, 300);
-
-  return (
-    <input
-      type="search"
-      defaultValue={query}
-      onChange={(e) => handleSearch(e.target.value)}
-      placeholder="Search..."
-    />
-  );
-}
-```
-
-**Clear All Filters**:
-
-```typescript
-const clearFilters = () => {
-  setSearchParams({});
-  // Or keep some params:
-  // setSearchParams({ page: "1" });
-};
-```
-
-**Preserve Other Params**:
-
-```typescript
-const updateCategory = (category: string) => {
-  setSearchParams((prev) => {
-    prev.set("category", category);
-    prev.set("page", "1");
-    // Other params (sort, query) are preserved
-    return prev;
-  });
-};
-```
-
-**Programmatic Search with useSubmit**:
-
-```typescript
-import { useSubmit } from "react-router";
-
-function SearchBar() {
-  const submit = useSubmit();
-
-  const handleSearch = (query: string) => {
-    // Submit as GET request to update search params
-    submit({ q: query, page: "1" }, { method: "get" });
-  };
-
-  return (
-    <input
-      type="search"
-      onChange={(e) => handleSearch(e.target.value)}
-      placeholder="Search..."
-    />
-  );
-}
-```
-
-Use `useSubmit` when you need to programmatically submit forms or update search params without using a `<Form>` element.
+**See [references/search-params.md](references/search-params.md) for pagination patterns, filtering with forms, type-safe parsing, and debounced search.**
 
 ## Route Metadata with handle
 
@@ -1306,191 +920,36 @@ export default function App() {
 
 ## Middleware (v7.9.0+)
 
-Middleware allows you to run code before and after route handlers, enabling authentication, logging, context sharing, and more.
+Middleware runs code before/after route handlers for authentication, logging, context sharing.
 
-### Enable Middleware
-
-Add to `react-router.config.ts`:
-
-```typescript
-import type { Config } from "@react-router/dev/config";
-import type { Future } from "react-router";
-
-declare module "react-router" {
-  interface Future {
-    v8_middleware: true;
-  }
-}
-
-export default {
-  future: {
-    v8_middleware: true,
-  },
-} satisfies Config;
-```
-
-**Note**: As of v7.9.0+, use `future.v8_middleware: true` (the `unstable_middleware` flag is deprecated). The `createContext` and `context.set/get` APIs are stable and imported directly from `react-router`.
-
-### Authentication Middleware Pattern
-
-Protect routes with authentication middleware:
+Quick example:
 
 ```typescript
 // app/middleware/auth.ts
-import { redirect } from "react-router";
-import { createContext } from "react-router";
+import { redirect, createContext } from "react-router";
 
-// Create a typed context for user data
 export const userContext = createContext<User>();
 
 export async function authMiddleware({ request, context }) {
   const session = await getSession(request);
-  const userId = session.get("userId");
+  if (!session.get("userId")) throw redirect("/login");
 
-  if (!userId) {
-    throw redirect("/login");
-  }
-
-  const user = await getUserById(userId);
+  const user = await getUserById(session.get("userId"));
   context.set(userContext, user);
 }
-```
 
-### Using Middleware in Routes
-
-```typescript
 // app/routes/dashboard.tsx
-import type { Route } from "./+types/dashboard";
-import { authMiddleware, userContext } from "~/middleware/auth";
-
-// Apply middleware to this route
 export const middleware = [authMiddleware] satisfies Route.MiddlewareFunction[];
 
 export async function loader({ context }: Route.LoaderArgs) {
-  // User is guaranteed to exist (middleware redirects if not)
   const user = context.get(userContext);
-  const dashboardData = await db.getDashboardData(user.id);
-  return { user, dashboardData };
-}
-
-export default function Dashboard({ loaderData }: Route.ComponentProps) {
-  return (
-    <div>
-      <h1>Welcome, {loaderData.user.name}</h1>
-      {/* Dashboard content */}
-    </div>
-  );
+  return { user };
 }
 ```
 
-### Context API for Data Sharing
+Enable with `future.v8_middleware: true` in `react-router.config.ts`.
 
-Use `context.set()` and `context.get()` to share data:
-
-```typescript
-import { createContext } from "react-router";
-
-// Create typed contexts
-export const userContext = createContext<User>();
-export const settingsContext = createContext<Settings>();
-
-// In middleware
-async function setupMiddleware({ context }) {
-  const user = await getUser();
-  const settings = await getSettings(user.id);
-
-  context.set(userContext, user);
-  context.set(settingsContext, settings);
-}
-
-// In loader
-export async function loader({ context }: Route.LoaderArgs) {
-  const user = context.get(userContext);
-  const settings = context.get(settingsContext);
-  return { user, settings };
-}
-```
-
-### Middleware Execution Order
-
-Middleware executes in a nested chain:
-1. **Down** (parent to child): Before response generation
-2. **Up** (child to parent): After response generation
-
-```typescript
-// app/routes/parent.tsx
-export const middleware = [
-  async ({ next }) => {
-    console.log("Parent middleware - before");
-    const response = await next();
-    console.log("Parent middleware - after");
-    return response;
-  },
-];
-
-// app/routes/parent.child.tsx
-export const middleware = [
-  async ({ next }) => {
-    console.log("Child middleware - before");
-    const response = await next();
-    console.log("Child middleware - after");
-    return response;
-  },
-];
-
-// Output:
-// Parent middleware - before
-// Child middleware - before
-// Child middleware - after
-// Parent middleware - after
-```
-
-### Common Middleware Patterns
-
-**Logging Middleware**:
-
-```typescript
-async function loggingMiddleware({ request, next }) {
-  const start = Date.now();
-  const response = await next();
-  const duration = Date.now() - start;
-  console.log(`${request.method} ${request.url} - ${duration}ms`);
-  return response;
-}
-```
-
-**Error Handling Middleware**:
-
-```typescript
-async function errorMiddleware({ next }) {
-  try {
-    return await next();
-  } catch (error) {
-    console.error("Route error:", error);
-    await logError(error);
-    throw error; // Re-throw to trigger error boundary
-  }
-}
-```
-
-**Role-Based Access Control**:
-
-```typescript
-export function requireRole(role: string) {
-  return async function roleMiddleware({ context }) {
-    const user = context.get(userContext);
-    if (!user.roles.includes(role)) {
-      throw redirect("/unauthorized");
-    }
-  };
-}
-
-// Usage
-export const middleware = [
-  authMiddleware,
-  requireRole("admin"),
-];
-```
+**See [references/middleware.md](references/middleware.md) for execution order, error handling, and role-based access patterns.**
 
 ## SSR and Pre-rendering
 
@@ -1532,307 +991,37 @@ export default {
 
 ## Async Streaming with Promises
 
-Stream non-critical data to the client progressively while rendering critical data immediately. This improves perceived performance by showing content faster with skeleton UI.
+Stream non-critical data while rendering critical data immediately. `defer()` is deprecated - just return promises directly.
 
-> **Note**: `defer()` is deprecated. Simply return promises directly from your loader without awaiting them. React Router will automatically stream the unresolved promises to the client.
-
-### When to Use Streaming
-
-Use streaming when:
-- You have **slow data** that would block page rendering
-- Some data is **critical** (needed immediately) and some is **non-critical** (can load later)
-- You want to show **skeleton UI** while data loads
-- API calls can run in parallel but have different response times
-
-**Don't use streaming for**:
-- Small, fast data that loads quickly (< 100ms)
-- Data that's always needed before rendering
-- Simple CRUD operations where streaming adds complexity
-
-### Basic Pattern
-
-Return promises directly from your loader without awaiting them:
+Quick example:
 
 ```typescript
-import type { Route } from "./+types/dashboard";
-
 export async function loader() {
-  // Critical data - await this (blocks rendering)
-  const user = await db.getUser();
+  const user = await db.getUser(); // Critical - await
+  const stats = db.getStats();     // Non-critical - don't await
 
-  // Non-critical data - don't await (streams to client)
-  const stats = db.getStats(); // Promise, not awaited
-  const activity = db.getRecentActivity(); // Promise, not awaited
-
-  // Return an object containing the promises - they stream automatically
-  return {
-    user,      // Resolved value
-    stats,     // Promise (streams)
-    activity,  // Promise (streams)
-  };
+  return { user, stats };
 }
 
 export default function Dashboard({ loaderData }: Route.ComponentProps) {
-  const { user, stats, activity } = loaderData;
+  const { user, stats } = loaderData;
 
   return (
     <div>
-      {/* Critical data renders immediately */}
       <h1>Welcome, {user.name}!</h1>
-
-      {/* Non-critical data streams with fallback UI */}
-      <React.Suspense fallback={<StatsSkeleton />}>
+      <Suspense fallback={<StatsSkeleton />}>
         <Await resolve={stats}>
           {(resolvedStats) => <StatsCard data={resolvedStats} />}
         </Await>
-      </React.Suspense>
-
-      <React.Suspense fallback={<ActivitySkeleton />}>
-        <Await resolve={activity}>
-          {(resolvedActivity) => <ActivityFeed items={resolvedActivity} />}
-        </Await>
-      </React.Suspense>
+      </Suspense>
     </div>
   );
 }
 ```
 
-> **Important**: You cannot return a single promise directly from a loader. The promises must be wrapped in an object with keys. For example, `return reviews` won't work, but `return { reviews }` will.
+> **Important**: Promises must be wrapped in an object (`return { reviews }` not `return reviews`).
 
-### Await Component
-
-The `<Await>` component handles streaming promises with three render patterns:
-
-**Pattern 1: Render function (Recommended)**
-
-```typescript
-import { Await } from "react-router";
-import { Suspense } from "react";
-
-<Suspense fallback={<ReviewsSkeleton />}>
-  <Await resolve={reviewsPromise}>
-    {(reviews) => <ReviewsList items={reviews} />}
-  </Await>
-</Suspense>
-```
-
-**Pattern 2: useAsyncValue hook**
-
-```typescript
-import { Await, useAsyncValue } from "react-router";
-
-<Suspense fallback={<ReviewsSkeleton />}>
-  <Await resolve={reviewsPromise}>
-    <ReviewsContent />
-  </Await>
-</Suspense>
-
-function ReviewsContent() {
-  const reviews = useAsyncValue(); // Access resolved value
-  return <ReviewsList items={reviews} />;
-}
-```
-
-**Pattern 3: With error boundary**
-
-```typescript
-<Suspense fallback={<ReviewsSkeleton />}>
-  <Await
-    resolve={reviewsPromise}
-    errorElement={<div>Failed to load reviews</div>}
-  >
-    {(reviews) => <ReviewsList items={reviews} />}
-  </Await>
-</Suspense>
-```
-
-### Error Handling
-
-Use `useAsyncError` to handle rejected promises:
-
-```typescript
-import { Await, useAsyncError, useAsyncValue } from "react-router";
-
-<Suspense fallback={<Loading />}>
-  <Await resolve={dataPromise}>
-    <DataDisplay />
-  </Await>
-</Suspense>
-
-function DataDisplay() {
-  try {
-    const data = useAsyncValue();
-    return <div>{data.value}</div>;
-  } catch {
-    const error = useAsyncError();
-    return <div>Error: {error.message}</div>;
-  }
-}
-```
-
-Or use `errorElement` prop:
-
-```typescript
-<Await
-  resolve={dataPromise}
-  errorElement={<ErrorDisplay />}
->
-  {(data) => <DataDisplay data={data} />}
-</Await>
-
-function ErrorDisplay() {
-  const error = useAsyncError();
-  return <div>Error: {error.message}</div>;
-}
-```
-
-### Complete Example: Dashboard with Streaming
-
-```typescript
-import { Suspense } from "react";
-import { Await } from "react-router";
-import type { Route } from "./+types/dashboard";
-
-export async function loader() {
-  // Critical: User info (fast, blocks render)
-  const user = await db.getUser();
-
-  // Non-critical: Stats (slow, streams)
-  const stats = fetch("/api/stats").then(r => r.json());
-
-  // Non-critical: Activity (slow, streams)
-  const activity = fetch("/api/activity").then(r => r.json());
-
-  // Just return the object - promises stream automatically
-  return { user, stats, activity };
-}
-
-export default function Dashboard({ loaderData }: Route.ComponentProps) {
-  const { user, stats, activity } = loaderData;
-
-  return (
-    <div>
-      <h1>Welcome, {user.name}!</h1>
-
-      <div className="grid">
-        {/* Stats section with skeleton */}
-        <Suspense fallback={<StatsSkeleton />}>
-          <Await
-            resolve={stats}
-            errorElement={<StatsError />}
-          >
-            {(resolvedStats) => (
-              <div>
-                <h2>Your Stats</h2>
-                <p>Posts: {resolvedStats.postCount}</p>
-                <p>Views: {resolvedStats.viewCount}</p>
-              </div>
-            )}
-          </Await>
-        </Suspense>
-
-        {/* Activity section with skeleton */}
-        <Suspense fallback={<ActivitySkeleton />}>
-          <Await resolve={activity}>
-            <ActivityFeed />
-          </Await>
-        </Suspense>
-      </div>
-    </div>
-  );
-}
-
-function ActivityFeed() {
-  const activity = useAsyncValue();
-  return (
-    <div>
-      <h2>Recent Activity</h2>
-      <ul>
-        {activity.map((item, i) => (
-          <li key={i}>{item.description}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function StatsSkeleton() {
-  return <div className="skeleton">Loading stats...</div>;
-}
-
-function ActivitySkeleton() {
-  return <div className="skeleton">Loading activity...</div>;
-}
-
-function StatsError() {
-  const error = useAsyncError();
-  return <div>Failed to load stats: {error.message}</div>;
-}
-```
-
-### Best Practices
-
-1. **Await Critical Data**: Always await data that's needed for the initial render
-2. **Stream Non-Critical**: Return slow or non-essential promises without awaiting to improve perceived performance
-3. **Provide Fallbacks**: Always wrap `<Await>` in `<Suspense>` with meaningful fallback UI
-4. **Handle Errors**: Use `errorElement` or `useAsyncError` for robust error handling
-5. **Keep Promises Unresolved**: Don't await promises in the loader if you want to stream them
-6. **Test Loading States**: Verify skeleton UI looks good and error states work correctly
-7. **Consider Mobile**: Streaming is especially beneficial on slower connections
-8. **Wrap in Objects**: Always return promises within an object, never directly
-
-### When NOT to Use Streaming
-
-- **Fast data** (< 100ms): Just await it, streaming adds unnecessary complexity
-- **All data is critical**: If everything blocks rendering anyway, no benefit to streaming
-- **Simple pages**: Don't over-engineer simple CRUD operations
-- **Sequential dependencies**: If data B depends on data A, you can't stream both effectively
-
-### When Streaming Doesn't Work
-
-Streaming requires SSR. It will **NOT** work in these cases:
-
-- `ssr: false` in config (SPA mode)
-- Static pre-rendering
-- Client-only routes (no server loader)
-
-In these scenarios, all promises must resolve before the page renders.
-
-### Performance Tips
-
-```typescript
-// ✅ Good: Parallel fetching with streaming
-export async function loader() {
-  const user = await db.getUser();
-
-  // These run in parallel, stream independently
-  const stats = db.getStats();
-  const activity = db.getActivity();
-
-  return { user, stats, activity };
-}
-
-// ❌ Bad: Sequential fetching (slow)
-export async function loader() {
-  const user = await db.getUser();
-  const stats = await db.getStats(); // Waits for user
-  const activity = await db.getActivity(); // Waits for stats
-
-  return { user, stats, activity };
-}
-
-// ✅ Good: Await critical, stream rest
-export async function loader() {
-  const [user, product] = await Promise.all([
-    db.getUser(),
-    db.getProduct()
-  ]);
-
-  const reviews = db.getReviews(); // Stream (not awaited)
-
-  return { user, product, reviews };
-}
-```
+**See [references/streaming.md](references/streaming.md) for error handling, useAsyncValue patterns, and when to use streaming.**
 
 ## Common Patterns
 
@@ -1901,23 +1090,6 @@ export default function Products({ loaderData }: Route.ComponentProps) {
   );
 }
 ```
-
-## Using Context7 for Documentation
-
-When you need up-to-date React Router 7 documentation, use Context7:
-
-```
-1. Resolve the library ID:
-   mcp__context7__resolve-library-id with libraryName="react-router"
-
-2. Query the docs:
-   mcp__context7__query-docs with libraryId="/remix-run/react-router"
-
-3. For website docs:
-   mcp__context7__query-docs with libraryId="/websites/reactrouter"
-```
-
-This ensures you have the latest API information and examples.
 
 ## Decision Tree
 
@@ -1995,31 +1167,15 @@ Before completing any React Router 7 implementation:
 - [useAsyncValue Hook](https://reactrouter.com/api/hooks/useAsyncValue)
 - [useAsyncError Hook](https://reactrouter.com/api/hooks/useAsyncError)
 
-## Notes
+## Key Notes
 
 - Always prefer server-side data loading over client-side
 - In route modules, **use props** (`Route.ComponentProps`) — hooks are for deep child components
-- Never use `useLoaderData<Route.ComponentProps["loaderData"]>()` — this pattern is incorrect
-- Use `as const` when setting `clientLoader.hydrate = true` for proper type inference
+- Never use `useLoaderData<Route.ComponentProps["loaderData"]>()` — this is incorrect
+- Use `as const` when setting `clientLoader.hydrate = true`
 - `HydrateFallback` is required when `clientLoader.hydrate = true`
-- Actions automatically revalidate all loaders on the page
-- The `href` utility provides compile-time route safety (v7.5+)
-- React Router 7 framework mode requires Vite
 - Return promises without awaiting to stream slow/non-critical data
 - Always wrap `<Await>` in `<Suspense>` with fallback UI
-- Don't stream fast data (< 100ms) — just await it
-- Use search params for shareable UI state — treat URL as source of truth
-- Use `<Form method="get">` for filters to automatically update search params
-- `useLoaderData` cannot be used in `ErrorBoundary` or `Layout` — use `useRouteLoaderData` instead
-- Use `match.loaderData` instead of deprecated `match.data` in useMatches
-- Middleware requires `future.v8_middleware: true` flag in config (v7.9.0+)
+- `useLoaderData` cannot be used in `ErrorBoundary` or `Layout` — use `useRouteLoaderData`
 - Use `.server.ts` naming for modules containing secrets or database clients
-- `handle` exports can contain any custom metadata for route matching
-
-## Outcome
-
-- Type-safe route modules with maximum type safety
-- Server-first data loading architecture
-- Proper hydration strategy based on use case
-- Optimized data fetching with minimal client-side overhead
-- Type-safe routing and links throughout the application
+- Middleware requires `future.v8_middleware: true` flag (v7.9.0+)
