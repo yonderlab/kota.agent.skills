@@ -751,3 +751,10 @@ Example query for useEffect alternatives:
 ```
 Query Context7 /websites/react_dev for "you might not need an effect derived state event handlers"
 ```
+
+### Performance Optimization (Next.js)
+
+For in-depth performance optimization patterns, see the Vercel React Best Practices skill:
+- **GitHub**: `vercel-labs/agent-skills` → `skills/react-best-practices`
+- **Focus**: 57 performance rules covering waterfalls, bundle size, re-renders, hydration
+- **Note**: Contains Next.js-specific patterns (next/dynamic, server components). Adapt for React Router 7 where applicable, or disregard Next.js-specific guidance when working on non-Next.js projects.
