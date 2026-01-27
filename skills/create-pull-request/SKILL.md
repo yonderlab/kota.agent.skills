@@ -1,136 +1,50 @@
 ---
 name: create-pull-request
 description: Create a pull request following the team's PR template and validation rules. Use when the user asks to create a pull request, create a PR, open a pull request, draft a PR, or prepare changes for review.
-version: 1.0.0
-author: Engineering
-tags:
-  - git
-  - github
-  - pull-request
-  - code-review
-requirements:
-  tools:
-    - git
-    - gh
+license: MIT
+metadata:
+  author: kota
+  version: "1.1.0"
 ---
 
 # Create Pull Request
 
-Create a well-structured pull request that follows the team's PR template requirements and validation guidelines.
-
 ## Preconditions
 
-### Validate GitHub CLI
+1. Verify `gh auth status` succeeds. If not, prompt user to run `gh auth login`.
+2. Verify not on `main`/`master`. If so, prompt user to create a feature branch.
+3. Verify no uncommitted changes. If found, prompt user to commit first (consider using `conventional-commit` skill).
+4. If no upstream exists, run `git push -u origin HEAD`.
 
-Ensure the GitHub CLI is authenticated:
+## PR Template
 
-```bash
-gh auth status
-```
+The PR description must follow the team's template structure. **See [references/pr-template.md](references/pr-template.md) for the full template, validation rules, and examples.**
 
-If not authenticated, stop and ask the user to run:
+Required sections:
+1. **About PR 📝** - What changed and why (cannot be empty)
+2. **Preview 🖼️** - Screenshot/recording (required for: Bug fix, New feature, Refactor, Improvement)
+3. **How to test 🧪** - Testing instructions for reviewers
+4. **Type of change 🔧** - Check at least one checkbox
 
-```bash
-gh auth login
-```
-
-### Validate git state
-
-Check the current branch and status:
-
-```bash
-git rev-parse --abbrev-ref HEAD
-git status
-```
-
-If on `main` or `master`:
-
-- Stop
-- Ask the user to create a feature branch first
-
-If there are uncommitted changes:
-
-- Stop
-- Ask the user to commit changes first (consider using the `conventional-commit` skill)
-
-### Validate upstream branch
-
-Check if the branch has been pushed:
-
-```bash
-git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null
-```
-
-If no upstream exists, push the branch:
-
-```bash
-git push -u origin HEAD
-```
-
-## PR Template Requirements
-
-The team uses a PR template with the following required sections:
-
-1. **About PR** - Description of what changed and why (REQUIRED, cannot be empty or just HTML comments)
-2. **Preview** - Screenshot or recording (REQUIRED for: Bug fix, New feature, Refactor, Improvement)
-3. **How to test** - Testing instructions for reviewers
-4. **Type of change** - Must check at least one:
-   - Bug fix 🐛
-   - New feature ✨
-   - Refactor 🧹
-   - Improvement 📈
-   - Documentation 📝
-   - Testing 🧪
-
-### Validation Rules
-
-- **BLOCKING** (must pass before merge): New feature, Improvement
-- **WARNING** (should pass but won't block): Bug fix, Refactor
+Validation levels:
+- **BLOCKING**: New feature, Improvement (PR cannot merge if validation fails)
+- **WARNING**: Bug fix, Refactor
 - **INFORMATIONAL**: Documentation, Testing
-
-Visual proof (screenshot/recording) is required for:
-
-- Bug fix
-- New feature
-- Refactor
-- Improvement
-
-Acceptable visual proof formats:
-
-- Inline images: `![alt](url)`
-- Inline videos: `<video src="url"></video>`
-- External links: Loom, YouTube, Vimeo, GitHub attachments
 
 ## Steps
 
 ### 1. Gather context
-
-Review the changes on the current branch:
 
 ```bash
 git diff main...HEAD --stat
 git log main..HEAD --oneline
 ```
 
-Understand:
-
-- What user problem or product need does this solve?
-- How does this improve the experience, product capability, or team efficiency?
-- What is the impact or value of this change?
-- How to test and verify the improvement
+Understand: What problem does this solve? What is the impact?
 
 ### 2. Determine PR type
 
-Based on the changes, identify the primary type:
-
-- **Bug fix**: Fixes a defect or unexpected behavior
-- **New feature**: Adds wholly new functionality
-- **Refactor**: Restructures code without changing behavior
-- **Improvement**: Enhances existing functionality
-- **Documentation**: Only documentation changes
-- **Testing**: Only test changes
-
-If multiple types apply, choose the primary one.
+Identify the primary type based on changes. If multiple apply, choose the primary one.
 
 ### 3. Collect visual proof (if required)
 
@@ -144,28 +58,33 @@ For Bug fix, New feature, Refactor, or Improvement:
 
 ### 4. Draft the PR description
 
-Create a description following this structure:
+Use the template from [references/pr-template.md](references/pr-template.md):
 
 ```markdown
 ## About PR 📝
 
-[2-3 sentences explaining how this change helps users, the product, or the team. Focus on the value and impact, not implementation details. Must be substantive - cannot be empty or just comments]
+[2-3 sentences on value/impact, not implementation details]
 
 ## Preview (screenshot or recording) 🖼️
 
-[If required: Paste screenshot, upload video, or provide link]
+[If required: screenshot, video, or link]
 
 ## How to test 🧪
 
 1. [Step-by-step testing instructions]
 2. [What reviewers should check]
-3. [Edge cases or specific scenarios to verify]
 
 ## Type of change 🔧
 
-- [x] [Selected type from above]
-- [ ] [Other types, unchecked]
+- [ ] Bug fix 🐛
+- [ ] New feature ✨
+- [ ] Refactor 🧹
+- [ ] Improvement 📈
+- [ ] Documentation 📝
+- [ ] Testing 🧪
 ```
+
+Mark the appropriate type with `[x]`.
 
 ### 5. Generate a concise title
 
@@ -210,44 +129,18 @@ After creation:
 - Remind the user to review the PR checklist manually if no automated validation exists
 - The PR can be edited on GitHub if any issues are found
 
-## Validation Reference
+## Validation Checklist
 
-### Automated Validation (if available)
+Verify the PR includes:
 
-Some repositories include automated PR validation (e.g., `scripts/validate-pr-description.js`) which:
-
-- Checks "About PR" is filled (not empty or just comments)
-- Verifies at least one type is selected
-- Ensures visual proof exists for applicable types
-- Returns exit code 1 for blocking failures (New feature, Improvement)
-- Returns exit code 1 for warnings (other types with missing requirements)
-
-### Manual Validation Checklist
-
-If no automated validation exists, verify the PR includes:
-
-1. ✅ **About PR section** - Substantive content explaining value/impact (not empty, not just HTML comments)
-2. ✅ **Type of change** - At least one checkbox selected
-3. ✅ **Visual proof** (if applicable) - Screenshot/recording/link for: Bug fix, New feature, Refactor, Improvement
-4. ✅ **Testing instructions** - Clear steps for reviewers to verify the changes
-5. ✅ **Meaningful title** - Concise, verb-first description of the change
+1. **About PR section** - Substantive content explaining value/impact
+2. **Type of change** - At least one checkbox selected
+3. **Visual proof** (if applicable) - For Bug fix, New feature, Refactor, Improvement
+4. **Testing instructions** - Clear steps for reviewers
+5. **Meaningful title** - Concise, verb-first description
 
 ## Notes
 
 - Do not create PRs with empty or placeholder descriptions
-- If the user is unsure about testing steps, help them think through the verification process
-- For blocking PR types (New feature, Improvement), all validations must pass
-- Visual proof is non-negotiable for the specified types
+- Visual proof is required for the specified types
 - The PR can be edited after creation if validation fails
-
-## Outcome
-
-- A pull request is created with:
-  - A clear, concise title
-  - A complete description following the template
-  - All required sections filled
-  - Visual proof (if required by type)
-  - Appropriate type selection
-- The PR is ready for team review
-- If automated validation exists, it will run and provide feedback
-- Otherwise, reviewers will manually verify the PR meets requirements
