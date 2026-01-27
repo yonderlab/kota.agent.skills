@@ -1,29 +1,13 @@
 ---
 name: react-best-practices
-description: Apply React best practices when writing or reviewing React code. Use when building components, reviewing PRs, refactoring React code, fixing performance issues, or asking "how should I structure this component".
-version: 1.0.0
-author: Engineering
-tags:
-  - react
-  - frontend
-  - best-practices
-  - hooks
-  - typescript
-  - performance
+description: Apply React best practices when writing or reviewing React code. Use when building components, reviewing PRs, refactoring React code, fixing performance issues, debugging re-renders, structuring state and data flow, converting useEffect to loaders, building forms, or asking "how should I structure this component".
+license: MIT
+metadata:
+  author: kota
+  version: "1.1.0"
 ---
 
 # React Best Practices
-
-Apply modern React best practices emphasizing simplicity, avoiding unnecessary effects, and leveraging the framework's data flow.
-
-## When To Use
-
-- Writing new React components
-- Reviewing React code in PRs
-- Refactoring existing components
-- Debugging performance issues
-- Structuring state and data flow
-- Building forms or handling user interactions
 
 ## Preconditions
 
@@ -47,14 +31,6 @@ When writing or reviewing React code:
 6. **Review TypeScript** - Props have explicit interfaces, no `any` types
 7. **Check accessibility** - Semantic HTML, focus management, keyboard support
 8. **Profile if needed** - Only add memoization after measuring performance
-
-## Outcome
-
-- Components are simpler with minimal useEffect usage
-- Data flow is predictable via loaders/actions or client cache
-- State is colocated appropriately (including URL state for shareable UI)
-- Code passes TypeScript strict checks
-- UI is accessible and keyboard-navigable
 
 ## Examples
 
@@ -165,22 +141,6 @@ useEffect(() => {
 ```
 
 ## Hooks Hygiene
-
-### Rules of Hooks
-
-1. **Only call hooks at the top level** - Never inside loops, conditions, or nested functions
-2. **Only call hooks from React functions** - Components or custom hooks
-
-```tsx
-// BAD - conditional hook
-if (isLoggedIn) {
-  const [user] = useState(null); // Breaks hook order
-}
-
-// GOOD - conditional logic inside hook result
-const [user] = useState(null);
-if (isLoggedIn && user) { /* ... */ }
-```
 
 ### Dependency Arrays
 
@@ -663,18 +623,6 @@ type CardProps = React.PropsWithChildren<{
 ```
 
 ## Accessibility
-
-### Semantic HTML First
-
-Use correct HTML elements before adding ARIA:
-
-```tsx
-// BAD
-<div onClick={handleClick} role="button">Click me</div>
-
-// GOOD
-<button onClick={handleClick}>Click me</button>
-```
 
 ### useId for Label Wiring
 
