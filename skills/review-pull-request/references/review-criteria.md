@@ -18,7 +18,7 @@ Use this checklist when reviewing pull requests. Only comment on actual issues; 
 - Co-locate tests and follow existing project patterns
 - Flag any missing or superficial test coverage
 
-## Flow and integration analysis
+## Flow analysis
 
 - Breaking changes to routes, loaders, actions or navigation
 - Form handling: validation, submission, error states, and progressive enhancement
