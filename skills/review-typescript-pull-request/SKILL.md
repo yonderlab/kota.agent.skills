@@ -1,5 +1,5 @@
 ---
-name: review-pull-request
+name: review-typescript-pull-request
 description: Expert PR review for TypeScript, Node.js, and React. Use when the user asks to review a pull request, review a PR, give PR feedback, or provide comprehensive context-aware feedback on changes. Triggers: "review this PR", "review pull request", "PR review", "feedback on this PR".
 license: MIT
 metadata:
@@ -7,7 +7,7 @@ metadata:
   version: "0.1.0"
 ---
 
-# Review Pull Request
+# Review TypeScript Pull Request
 
 Conduct a comprehensive, context-aware code review as an expert engineer in TypeScript, Node.js, and React. Apply the criteria in [references/review-criteria.md](references/review-criteria.md); only comment on actual issues, not on code that follows established patterns.
 
