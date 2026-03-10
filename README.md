@@ -14,7 +14,7 @@ npx skills add https://github.com/yonderlab/kota.agent.skills --skill <skill-nam
 
 ## Skills
 
-All skills live in the `skills/` directory.
+All skills live in the [skills/](skills/) directory.
 
 | Skill | Description |
 |-------|-------------|
