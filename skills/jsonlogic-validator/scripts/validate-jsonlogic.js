@@ -26,7 +26,9 @@ const VALID_OPERATORS = new Set([
   // String
   'cat', 'substr',
   // Misc
-  'log'
+  'log',
+  // Engine custom operations (@kotaio/adaptive-requirements-engine)
+  'today', 'age_from_date', 'months_since', 'date_diff', 'abs', 'match'
 ]);
 
 // Operators that require specific argument counts: [min, max] (null = no limit)
@@ -66,6 +68,13 @@ const OPERATOR_ARITY = {
   'log': [1, 1],
   'or': [1, null],
   'and': [1, null],
+  // Engine custom operations
+  'today': [0, 1],
+  'age_from_date': [1, 1],
+  'months_since': [1, 1],
+  'date_diff': [3, 3],
+  'abs': [1, 1],
+  'match': [2, 3],
 };
 
 class ValidationError {
@@ -240,6 +249,39 @@ class JSONLogicValidator {
             ));
           }
         }
+      }
+    } else if (operator === 'date_diff') {
+      if (Array.isArray(args) && args.length >= 3) {
+        const unit = args[2];
+        if (typeof unit === 'string' && !['days', 'months', 'years'].includes(unit)) {
+          this.errors.push(new ValidationError(
+            `'date_diff' unit must be "days", "months", or "years", got "${unit}"`,
+            path
+          ));
+        }
+      }
+    } else if (operator === 'match') {
+      if (Array.isArray(args) && args.length >= 2) {
+        const pattern = args[1];
+        if (typeof pattern === 'string') {
+          try {
+            new RegExp(pattern);
+          } catch (e) {
+            this.errors.push(new ValidationError(
+              `'match' has invalid regex pattern: ${e.message}`,
+              path
+            ));
+          }
+        }
+      }
+    } else if (operator === 'today') {
+      const argsList = Array.isArray(args) ? args : [args];
+      if (argsList.length > 0 && !(argsList.length === 1 && typeof argsList[0] === 'object' && argsList[0] !== null && Object.keys(argsList[0]).length === 0)) {
+        this.warnings.push(new ValidationError(
+          `'today' takes no arguments. Use { "today": {} }`,
+          path,
+          'warning'
+        ));
       }
     }
   }

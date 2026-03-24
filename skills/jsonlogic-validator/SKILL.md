@@ -1,6 +1,6 @@
 ---
 name: jsonlogic-validator
-description: Implement, validate, and test JSONLogic rules for portable business logic. Use when working with JSONLogic syntax, creating rules for conditional logic, validating rule structures, testing rules against data, or converting business requirements to JSONLogic. Triggers on requests to "write jsonlogic", "validate jsonlogic", "create a rule", "business logic as JSON", "conditional logic", or any mention of JSONLogic rules.
+description: Implement, validate, and test JSONLogic rules for portable business logic. Use when working with JSONLogic syntax, creating rules for conditional logic, validating rule structures, testing rules against data, converting business requirements to JSONLogic, or using engine custom operations like today, age_from_date, months_since, date_diff, abs, match. Triggers on "write jsonlogic", "validate jsonlogic", "create a rule", "business logic as JSON", "conditional logic", "date calculation", "regex match", or any mention of JSONLogic rules.
 ---
 
 # JSONLogic Validator
@@ -26,6 +26,41 @@ Every rule: `{ "operator": [arguments] }`
 | **Numeric** | `>`, `>=`, `<`, `<=`, `+`, `-`, `*`, `/`, `%`, `max`, `min` |
 | **Array** | `map`, `filter`, `reduce`, `all`, `some`, `none`, `merge`, `in` |
 | **String** | `cat`, `substr`, `in` |
+| **Custom** | `today`, `age_from_date`, `months_since`, `date_diff`, `abs`, `match` |
+
+## Engine Custom Operations
+
+The `@kotaio/adaptive-requirements-engine` registers these operations on top of standard JSONLogic. **They must exist in the engine before they can be used in rules.** If you need a new custom operation, implement it in the engine first, then update this skill.
+
+| Operation | Syntax | Returns |
+|-----------|--------|---------|
+| `today` | `{ "today": {} }` | Today's date as `"YYYY-MM-DD"` |
+| `age_from_date` | `{ "age_from_date": { "var": "birthdate" } }` | Age in whole years |
+| `months_since` | `{ "months_since": { "var": "hire_date" } }` | Months elapsed |
+| `date_diff` | `{ "date_diff": [from, to, "days"\|"months"\|"years"] }` | Difference in unit |
+| `abs` | `{ "abs": { "var": "value" } }` | Absolute value |
+| `match` | `{ "match": [{ "var": "field" }, "^pattern$", "flags"] }` | Boolean regex test |
+
+### date_diff
+
+Accepts both object and array form. Object form `{ "from": ..., "to": ..., "unit": "days" }` is normalized to array form `[from, to, unit]` by the engine. Unit must be `"days"`, `"months"`, or `"years"`.
+
+### match
+
+Regex pattern matching. Third argument (flags like `"i"`) is optional. Returns `false` on invalid patterns.
+
+```json
+{ "match": [{ "var": "diagnosis_code" }, "^[A-Z]\\d{2}(\\.\\d{1,2})?$"] }
+```
+
+## Rule Contexts
+
+Rules appear in 4 field definition contexts:
+
+- **`validation.rules`** — Custom validation with error messages and optional `when` condition
+- **`validation.requireWhen`** — Conditional required fields
+- **`excludeWhen`** — Conditionally exclude fields
+- **`compute`** — Derived/calculated field values
 
 ## Workflow
 

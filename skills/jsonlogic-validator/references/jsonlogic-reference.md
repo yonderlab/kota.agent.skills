@@ -278,6 +278,99 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 
 ---
 
+## Engine Custom Operations
+
+The `@kotaio/adaptive-requirements-engine` registers these operations on top of standard JSONLogic. **Custom operations must exist in the engine before they can be used in rules.** The validator only accepts operations the engine recognizes. If you need a new custom operation, implement it in the engine first, then update this reference.
+
+### `today` - Current date
+
+```json
+// Returns today's date as ISO string (YYYY-MM-DD)
+{ "today": {} }  // e.g. "2026-03-24"
+
+// Use in comparisons
+{ "<=": [{ "var": "effective_date" }, { "today": {} }] }
+```
+
+### `age_from_date` - Calculate age in years
+
+```json
+// Age from birthdate (whole years, accounts for month/day)
+{ "age_from_date": { "var": "birthdate" } }
+// Data: { "birthdate": "1990-05-15" } → 35
+
+// Use in validation: must be at least 18
+{ ">=": [{ "age_from_date": { "var": "birthdate" } }, 18] }
+```
+
+### `months_since` - Months elapsed since date
+
+```json
+// Months since a date
+{ "months_since": { "var": "hire_date" } }
+// Data: { "hire_date": "2013-01-15" } → 158
+
+// Probation check: employed at least 6 months
+{ ">=": [{ "months_since": { "var": "start_date" } }, 6] }
+```
+
+### `date_diff` - Date difference in units
+
+```json
+// Array form: [from, to, unit]
+{ "date_diff": [{ "var": "start_date" }, { "var": "end_date" }, "days"] }
+
+// Unit must be "days", "months", or "years"
+{ "date_diff": [{ "var": "dob" }, { "today": {} }, "years"] }
+
+// Object form (normalized to array by engine):
+{ "date_diff": { "from": { "var": "start" }, "to": { "var": "end" }, "unit": "months" } }
+```
+
+Returns `null` if either date is invalid.
+
+### `abs` - Absolute value
+
+```json
+{ "abs": { "var": "temperature_delta" } }
+// Data: { "temperature_delta": -5 } → 5
+
+// Tolerance check: within 10 of target
+{ "<=": [{ "abs": { "-": [{ "var": "actual" }, { "var": "target" }] } }, 10] }
+```
+
+Returns `null` for non-numeric input.
+
+### `match` - Regex pattern matching
+
+```json
+// Basic pattern match
+{ "match": [{ "var": "zip_code" }, "^\\d{5}(-\\d{4})?$"] }
+
+// With flags (case-insensitive)
+{ "match": [{ "var": "email" }, "^[a-z0-9.]+@[a-z0-9.]+$", "i"] }
+
+// Medical code validation
+{ "match": [{ "var": "diagnosis_code" }, "^[A-Z]\\d{2}(\\.\\d{1,2})?$"] }
+```
+
+Returns `false` on invalid patterns or non-string inputs.
+
+### Rule Contexts
+
+Rules appear in 4 field definition contexts within adaptive requirements:
+
+| Context | Purpose | Example |
+|---------|---------|---------|
+| `validation.rules` | Custom validation with error messages | `{ rule: { ">=": [{ "var": "age" }, 18] }, message: "Must be 18+" }` |
+| `validation.requireWhen` | Conditional required fields | `{ "==": [{ "var": "answers.is_married" }, true] }` |
+| `excludeWhen` | Conditionally exclude fields | `{ "!": { "var": "answers.has_spouse" } }` |
+| `compute` | Derived/calculated values | `{ "*": [{ "var": "answers.price" }, { "var": "answers.quantity" }] }` |
+
+Validation rules also support an optional `when` condition that gates when the rule applies.
+
+---
+
 ## Truthy / Falsy Rules
 
 JSONLogic has its **own specification** for truthiness that differs from JavaScript:
