@@ -20,6 +20,7 @@ All skills live in the [skills/](skills/) directory.
 |-------|-------------|
 | **conventional-commit** | Teaches your agent the [Conventional Commits](https://www.conventionalcommits.org/) spec and a structured commit-and-push workflow, so it produces consistent, well-formatted commits instead of ad-hoc messages. |
 | **create-pull-request** | Gives your agent a step-by-step PR creation process with template adherence and validation checks, so PRs are complete and review-ready on the first try. |
+| **ef-migration-rebase** | Gives your agent a deterministic, CI/CD-safe workflow for detecting and fixing out-of-order EF Core migrations after a merge or rebase, so pipelines regenerate migrations with correct timestamps instead of failing. |
 | **jsonlogic-validator** | Teaches your agent the [JSONLogic](https://jsonlogic.com/) syntax so it can correctly implement, validate, and test JSONLogic rules instead of guessing at the format. |
 | **product-requirements** | Turns your agent into a PRD facilitator that asks the right questions one at a time, instead of jumping ahead and filling a document with assumptions. |
 | **react-best-practices** | Gives your agent a curated, opinionated set of React rules covering state management, performance, and component structure, so it writes React code consistently rather than relying on generic knowledge. |
