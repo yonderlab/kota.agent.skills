@@ -16,27 +16,59 @@
 // All valid JSONLogic operators
 const VALID_OPERATORS = new Set([
   // Data access
-  'var', 'missing', 'missing_some',
+  'var',
+  'missing',
+  'missing_some',
   // Logic
-  'if', '?:', '==', '===', '!=', '!==', '!', '!!', 'or', 'and',
+  'if',
+  '?:',
+  '==',
+  '===',
+  '!=',
+  '!==',
+  '!',
+  '!!',
+  'or',
+  'and',
   // Numeric
-  '>', '>=', '<', '<=', 'max', 'min', '+', '-', '*', '/', '%',
+  '>',
+  '>=',
+  '<',
+  '<=',
+  'max',
+  'min',
+  '+',
+  '-',
+  '*',
+  '/',
+  '%',
   // Array
-  'map', 'filter', 'reduce', 'all', 'some', 'none', 'merge', 'in',
+  'map',
+  'filter',
+  'reduce',
+  'all',
+  'some',
+  'none',
+  'merge',
+  'in',
   // String
-  'cat', 'substr',
+  'cat',
+  'substr',
   // Misc
   'log',
   // Engine custom operations (@kotaio/adaptive-requirements-engine)
-  'today', 'age_from_date', 'months_since', 'date_diff', 'abs', 'match'
+  'today',
+  'match',
+  'phone_valid',
+  'iban_valid',
 ]);
 
 // Operators that require specific argument counts: [min, max] (null = no limit)
 const OPERATOR_ARITY = {
-  'var': [0, 2],
-  'missing': [1, null],
-  'missing_some': [2, 2],
-  'if': [3, null],
+  var: [0, 2],
+  missing: [1, null],
+  missing_some: [2, 2],
+  if: [3, null],
   '?:': [3, null],
   '!': [1, 1],
   '!!': [1, 1],
@@ -48,33 +80,31 @@ const OPERATOR_ARITY = {
   '>=': [2, 3],
   '<': [2, 3],
   '<=': [2, 3],
-  'max': [1, null],
-  'min': [1, null],
+  max: [1, null],
+  min: [1, null],
   '+': [1, null],
   '-': [1, 2],
   '*': [2, null],
   '/': [2, 2],
   '%': [2, 2],
-  'map': [2, 2],
-  'filter': [2, 2],
-  'reduce': [3, 3],
-  'all': [2, 2],
-  'some': [2, 2],
-  'none': [2, 2],
-  'merge': [1, null],
-  'in': [2, 2],
-  'cat': [1, null],
-  'substr': [2, 3],
-  'log': [1, 1],
-  'or': [1, null],
-  'and': [1, null],
+  map: [2, 2],
+  filter: [2, 2],
+  reduce: [3, 3],
+  all: [2, 2],
+  some: [2, 2],
+  none: [2, 2],
+  merge: [1, null],
+  in: [2, 2],
+  cat: [1, null],
+  substr: [2, 3],
+  log: [1, 1],
+  or: [1, null],
+  and: [1, null],
   // Engine custom operations
-  'today': [0, 1],
-  'age_from_date': [1, 1],
-  'months_since': [1, 1],
-  'date_diff': [3, 3],
-  'abs': [1, 1],
-  'match': [2, 3],
+  today: [0, 1],
+  match: [2, 3],
+  phone_valid: [1, 2],
+  iban_valid: [1, 2],
 };
 
 class ValidationError {
@@ -99,7 +129,7 @@ class JSONLogicValidator {
     this.warnings = [];
     this.validOperators = new Set(VALID_OPERATORS);
     if (customOperators) {
-      customOperators.forEach(op => this.validOperators.add(op));
+      customOperators.forEach((op) => this.validOperators.add(op));
     }
   }
 
@@ -112,7 +142,12 @@ class JSONLogicValidator {
 
   _validateRule(rule, path) {
     // Primitives are always valid as values
-    if (rule === null || typeof rule === 'boolean' || typeof rule === 'number' || typeof rule === 'string') {
+    if (
+      rule === null ||
+      typeof rule === 'boolean' ||
+      typeof rule === 'number' ||
+      typeof rule === 'string'
+    ) {
       return;
     }
 
@@ -126,10 +161,9 @@ class JSONLogicValidator {
 
     // Must be an object (operation) at this point
     if (typeof rule !== 'object') {
-      this.errors.push(new ValidationError(
-        `Expected object, array, or primitive, got ${typeof rule}`,
-        path
-      ));
+      this.errors.push(
+        new ValidationError(`Expected object, array, or primitive, got ${typeof rule}`, path)
+      );
       return;
     }
 
@@ -142,11 +176,13 @@ class JSONLogicValidator {
 
     // JSONLogic rules should have exactly one key (the operator)
     if (keys.length > 1) {
-      this.warnings.push(new ValidationError(
-        `Multiple keys in rule object. Only first key '${keys[0]}' will be used as operator`,
-        path,
-        'warning'
-      ));
+      this.warnings.push(
+        new ValidationError(
+          `Multiple keys in rule object. Only first key '${keys[0]}' will be used as operator`,
+          path,
+          'warning'
+        )
+      );
     }
 
     const operator = keys[0];
@@ -154,10 +190,12 @@ class JSONLogicValidator {
 
     // Validate operator
     if (!this.validOperators.has(operator)) {
-      this.errors.push(new ValidationError(
-        `Unknown operator '${operator}'. Valid operators: ${[...this.validOperators].sort().join(', ')}`,
-        path
-      ));
+      this.errors.push(
+        new ValidationError(
+          `Unknown operator '${operator}'. Valid operators: ${[...this.validOperators].sort().join(', ')}`,
+          path
+        )
+      );
       return;
     }
 
@@ -170,17 +208,21 @@ class JSONLogicValidator {
       const argCount = argsList.length;
 
       if (minArgs !== null && argCount < minArgs) {
-        this.errors.push(new ValidationError(
-          `Operator '${operator}' requires at least ${minArgs} argument(s), got ${argCount}`,
-          path
-        ));
+        this.errors.push(
+          new ValidationError(
+            `Operator '${operator}' requires at least ${minArgs} argument(s), got ${argCount}`,
+            path
+          )
+        );
       }
 
       if (maxArgs !== null && argCount > maxArgs) {
-        this.errors.push(new ValidationError(
-          `Operator '${operator}' accepts at most ${maxArgs} argument(s), got ${argCount}`,
-          path
-        ));
+        this.errors.push(
+          new ValidationError(
+            `Operator '${operator}' accepts at most ${maxArgs} argument(s), got ${argCount}`,
+            path
+          )
+        );
       }
     }
 
@@ -201,40 +243,50 @@ class JSONLogicValidator {
     if (operator === 'var') {
       let firstArg = Array.isArray(args) && args.length > 0 ? args[0] : args;
 
-      if (firstArg !== null && firstArg !== '' && typeof firstArg !== 'string' && typeof firstArg !== 'number') {
+      if (
+        firstArg !== null &&
+        firstArg !== '' &&
+        typeof firstArg !== 'string' &&
+        typeof firstArg !== 'number'
+      ) {
         if (typeof firstArg !== 'object') {
-          this.warnings.push(new ValidationError(
-            `'var' typically expects a string path or number index, got ${typeof firstArg}`,
-            path,
-            'warning'
-          ));
+          this.warnings.push(
+            new ValidationError(
+              `'var' typically expects a string path or number index, got ${typeof firstArg}`,
+              path,
+              'warning'
+            )
+          );
         }
       }
     } else if (operator === 'missing_some') {
       if (Array.isArray(args) && args.length >= 2) {
         const minRequired = args[0];
         if (typeof minRequired !== 'number') {
-          this.errors.push(new ValidationError(
-            `'missing_some' first argument must be a number (minimum required), got ${typeof minRequired}`,
-            path
-          ));
+          this.errors.push(
+            new ValidationError(
+              `'missing_some' first argument must be a number (minimum required), got ${typeof minRequired}`,
+              path
+            )
+          );
         }
         const keys = args[1];
         if (!Array.isArray(keys)) {
-          this.errors.push(new ValidationError(
-            `'missing_some' second argument must be an array of keys`,
-            path
-          ));
+          this.errors.push(
+            new ValidationError(`'missing_some' second argument must be an array of keys`, path)
+          );
         }
       }
     } else if (operator === 'if' || operator === '?:') {
       const argsList = Array.isArray(args) ? args : [args];
       if (argsList.length >= 3 && argsList.length % 2 === 0) {
-        this.warnings.push(new ValidationError(
-          `'if' with even number of arguments (${argsList.length}) has no else clause`,
-          path,
-          'warning'
-        ));
+        this.warnings.push(
+          new ValidationError(
+            `'if' with even number of arguments (${argsList.length}) has no else clause`,
+            path,
+            'warning'
+          )
+        );
       }
     } else if (operator === 'reduce') {
       if (Array.isArray(args) && args.length >= 3) {
@@ -242,22 +294,14 @@ class JSONLogicValidator {
         if (typeof reducer === 'object' && reducer !== null) {
           const reducerStr = JSON.stringify(reducer);
           if (!reducerStr.includes('accumulator') && !reducerStr.includes('current')) {
-            this.warnings.push(new ValidationError(
-              `'reduce' logic should reference 'accumulator' and/or 'current' via var`,
-              path,
-              'warning'
-            ));
+            this.warnings.push(
+              new ValidationError(
+                `'reduce' logic should reference 'accumulator' and/or 'current' via var`,
+                path,
+                'warning'
+              )
+            );
           }
-        }
-      }
-    } else if (operator === 'date_diff') {
-      if (Array.isArray(args) && args.length >= 3) {
-        const unit = args[2];
-        if (typeof unit === 'string' && !['days', 'months', 'years'].includes(unit)) {
-          this.errors.push(new ValidationError(
-            `'date_diff' unit must be "days", "months", or "years", got "${unit}"`,
-            path
-          ));
         }
       }
     } else if (operator === 'match') {
@@ -267,21 +311,26 @@ class JSONLogicValidator {
           try {
             new RegExp(pattern);
           } catch (e) {
-            this.errors.push(new ValidationError(
-              `'match' has invalid regex pattern: ${e.message}`,
-              path
-            ));
+            this.errors.push(
+              new ValidationError(
+                `'match' has invalid regex pattern: ${e.message}`,
+                path
+              )
+            );
           }
         }
       }
     } else if (operator === 'today') {
       const argsList = Array.isArray(args) ? args : [args];
+      // today takes no meaningful arguments - typically called as { "today": {} }
       if (argsList.length > 0 && !(argsList.length === 1 && typeof argsList[0] === 'object' && argsList[0] !== null && Object.keys(argsList[0]).length === 0)) {
-        this.warnings.push(new ValidationError(
-          `'today' takes no arguments. Use { "today": {} }`,
-          path,
-          'warning'
-        ));
+        this.warnings.push(
+          new ValidationError(
+            `'today' takes no arguments. Use { "today": {} }`,
+            path,
+            'warning'
+          )
+        );
       }
     }
   }
@@ -296,14 +345,14 @@ class JSONLogicValidator {
 
     if (this.errors.length > 0) {
       lines.push(`❌ Found ${this.errors.length} error(s):`);
-      this.errors.forEach(error => {
+      this.errors.forEach((error) => {
         lines.push(`  • ${error}`);
       });
     }
 
     if (this.warnings.length > 0) {
       lines.push(`⚠️  Found ${this.warnings.length} warning(s):`);
-      this.warnings.forEach(warning => {
+      this.warnings.forEach((warning) => {
         lines.push(`  • ${warning}`);
       });
     }
@@ -462,7 +511,7 @@ function main() {
   // Parse custom operators
   let customOps = null;
   if (args.customOps) {
-    customOps = args.customOps.split(',').map(op => op.trim());
+    customOps = args.customOps.split(',').map((op) => op.trim());
   }
 
   // Validate
@@ -476,7 +525,7 @@ function main() {
     console.log('\n📊 Data path analysis:');
     const pathWarnings = checkDataPaths(rule, data);
     if (pathWarnings.length > 0) {
-      pathWarnings.forEach(warning => {
+      pathWarnings.forEach((warning) => {
         console.log(`  ⚠️  ${warning}`);
       });
     } else {
