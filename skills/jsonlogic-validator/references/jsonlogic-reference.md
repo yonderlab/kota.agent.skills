@@ -11,13 +11,13 @@ JSONLogic is a system for creating shareable, portable rules as JSON data. It en
 
 ### Key Characteristics
 
-| Property | Description |
-|----------|-------------|
-| **Terse** | Minimal syntax overhead |
-| **Consistent** | Uniform structure across all operations |
-| **Secure** | No `eval()`, read-only access to data |
-| **Deterministic** | No loops, functions, or side effects |
-| **Portable** | Implementations in JS, PHP, Python, Ruby, Go, Java, .Net, C++ |
+| Property          | Description                                                   |
+| ----------------- | ------------------------------------------------------------- |
+| **Terse**         | Minimal syntax overhead                                       |
+| **Consistent**    | Uniform structure across all operations                       |
+| **Secure**        | No `eval()`, read-only access to data                         |
+| **Deterministic** | No loops, functions, or side effects                          |
+| **Portable**      | Implementations in JS, PHP, Python, Ruby, Go, Java, .Net, C++ |
 
 ---
 
@@ -46,6 +46,7 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ### Data Access
 
 #### `var` - Retrieve data
+
 ```json
 // Basic access
 { "var": "propertyName" }
@@ -64,12 +65,14 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ```
 
 #### `missing` - Check for missing keys
+
 ```json
 // Returns array of missing keys, or empty array if all present
 { "missing": ["key1", "key2", "key3"] }
 ```
 
 #### `missing_some` - Require minimum keys
+
 ```json
 // First arg = minimum required, second arg = keys to check
 // Returns empty array if minimum met, otherwise missing keys
@@ -81,6 +84,7 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ### Logic & Boolean Operations
 
 #### `if` - Conditional
+
 ```json
 // Basic if/then/else
 { "if": [condition, then_value, else_value] }
@@ -103,6 +107,7 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ```
 
 #### Comparison Operators
+
 ```json
 // Loose equality (type coercion)
 { "==": [1, "1"] }   // true
@@ -116,6 +121,7 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ```
 
 #### Logical Operators
+
 ```json
 // Negation
 { "!": [true] }      // false
@@ -136,6 +142,7 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ### Numeric Operations
 
 #### Comparison
+
 ```json
 { ">": [3, 1] }   // true
 { ">=": [3, 3] }  // true
@@ -148,6 +155,7 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ```
 
 #### Arithmetic
+
 ```json
 // Addition (multiple arguments)
 { "+": [1, 2, 3] }     // 6
@@ -172,6 +180,7 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ```
 
 #### Min/Max
+
 ```json
 { "max": [1, 5, 3] }   // 5
 { "min": [1, 5, 3] }   // 1
@@ -182,39 +191,36 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ### Array Operations
 
 #### `map` - Transform each element
+
 ```json
 // Double each number
 {
-  "map": [
-    { "var": "numbers" },
-    { "*": [{ "var": "" }, 2] }
-  ]
+  "map": [{ "var": "numbers" }, { "*": [{ "var": "" }, 2] }]
 }
 // Data: { "numbers": [1, 2, 3] }
 // Result: [2, 4, 6]
 ```
 
 #### `filter` - Keep matching elements
+
 ```json
 // Keep numbers > 2
 {
-  "filter": [
-    { "var": "numbers" },
-    { ">": [{ "var": "" }, 2] }
-  ]
+  "filter": [{ "var": "numbers" }, { ">": [{ "var": "" }, 2] }]
 }
 // Data: { "numbers": [1, 2, 3, 4] }
 // Result: [3, 4]
 ```
 
 #### `reduce` - Combine into single value
+
 ```json
 // Sum all numbers
 {
   "reduce": [
     { "var": "numbers" },
     { "+": [{ "var": "accumulator" }, { "var": "current" }] },
-    0  // initial value
+    0 // initial value
   ]
 }
 // Data: { "numbers": [1, 2, 3, 4] }
@@ -222,6 +228,7 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ```
 
 #### `all` / `some` / `none` - Test array elements
+
 ```json
 // All elements pass test
 { "all": [{ "var": "numbers" }, { ">": [{ "var": "" }, 0] }] }
@@ -234,13 +241,15 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ```
 
 #### `merge` - Combine arrays
+
 ```json
-{ "merge": [[1, 2], [3, 4], 5] }  // [1, 2, 3, 4, 5]
+{ "merge": [[1, 2], [3, 4], 5] } // [1, 2, 3, 4, 5]
 ```
 
 #### `in` - Array membership
+
 ```json
-{ "in": ["needle", ["hay", "needle", "stack"]] }  // true
+{ "in": ["needle", ["hay", "needle", "stack"]] } // true
 ```
 
 ---
@@ -248,16 +257,19 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ### String Operations
 
 #### `in` - Substring check
+
 ```json
-{ "in": ["find", "find me in this string"] }  // true
+{ "in": ["find", "find me in this string"] } // true
 ```
 
 #### `cat` - Concatenation
+
 ```json
-{ "cat": ["Hello", " ", "World"] }  // "Hello World"
+{ "cat": ["Hello", " ", "World"] } // "Hello World"
 ```
 
 #### `substr` - Extract substring
+
 ```json
 // substr(string, start, length)
 { "substr": ["jsonlogic", 0, 4] }   // "json"
@@ -271,6 +283,7 @@ Every JSONLogic rule follows the pattern: `{ "operator": [arguments] }`
 ### Debugging
 
 #### `log` - Console output
+
 ```json
 // Logs value and returns it unchanged
 { "log": { "var": "debug_value" } }
@@ -292,54 +305,30 @@ The `@kotaio/adaptive-requirements-engine` registers these operations on top of 
 { "<=": [{ "var": "effective_date" }, { "today": {} }] }
 ```
 
-### `age_from_date` - Calculate age in years
+### Date arithmetic (no built-in helper)
+
+The engine does not ship dedicated date-math operations (no `age_from_date`, `months_since`, `date_diff`, `abs`). Compose with `today` and string ops against ISO `YYYY-MM-DD` values.
+
+"Age in whole years from `dob`" (accounts for whether this year's birthday has passed):
 
 ```json
-// Age from birthdate (whole years, accounts for month/day)
-{ "age_from_date": { "var": "birthdate" } }
-// Data: { "birthdate": "1990-05-15" } → 35
-
-// Use in validation: must be at least 18
-{ ">=": [{ "age_from_date": { "var": "birthdate" } }, 18] }
+{ "-": [
+  { "-": [
+    { "substr": [{ "today": {} }, 0, 4] },
+    { "substr": [{ "var": "dob" }, 0, 4] }
+  ]},
+  { "if": [
+    { ">=": [
+      { "substr": [{ "today": {} }, 5] },
+      { "substr": [{ "var": "dob" }, 5] }
+    ]},
+    0,
+    1
+  ]}
+]}
 ```
 
-### `months_since` - Months elapsed since date
-
-```json
-// Months since a date
-{ "months_since": { "var": "hire_date" } }
-// Data: { "hire_date": "2013-01-15" } → 158
-
-// Probation check: employed at least 6 months
-{ ">=": [{ "months_since": { "var": "start_date" } }, 6] }
-```
-
-### `date_diff` - Date difference in units
-
-```json
-// Array form: [from, to, unit]
-{ "date_diff": [{ "var": "start_date" }, { "var": "end_date" }, "days"] }
-
-// Unit must be "days", "months", or "years"
-{ "date_diff": [{ "var": "dob" }, { "today": {} }, "years"] }
-
-// Object form (normalized to array by engine):
-{ "date_diff": { "from": { "var": "start" }, "to": { "var": "end" }, "unit": "months" } }
-```
-
-Returns `null` if either date is invalid.
-
-### `abs` - Absolute value
-
-```json
-{ "abs": { "var": "temperature_delta" } }
-// Data: { "temperature_delta": -5 } → 5
-
-// Tolerance check: within 10 of target
-{ "<=": [{ "abs": { "-": [{ "var": "actual" }, { "var": "target" }] } }, 10] }
-```
-
-Returns `null` for non-numeric input.
+`substr` extracts the year (`[0,4]` → `"YYYY"`) and the month-day suffix (`[5]` → `"MM-DD"`). Lexicographic comparison of zero-padded `MM-DD` matches calendar order, so the inner `if` subtracts 1 when this year's birthday hasn't been reached yet. JSON Logic coerces numeric strings, so `"-"` between two `"YYYY"` strings returns a number.
 
 ### `match` - Regex pattern matching
 
@@ -376,22 +365,24 @@ Validation rules also support an optional `when` condition that gates when the r
 JSONLogic has its **own specification** for truthiness that differs from JavaScript:
 
 ### Falsy Values
+
 - `0` (zero)
 - `[]` (empty array)
 - `""` (empty string)
 - `null`
 
 ### Truthy Values
+
 - Any non-zero number (`1`, `-1`, `0.5`)
 - Any non-empty array (`[1]`, `[0]`, `[[]]`)
 - Any non-empty string (`"hello"`, `"0"`, `"false"`)
 
 ### Key Differences from JavaScript
 
-| Value | JavaScript | JSONLogic |
-|-------|------------|-----------|
-| `[]` (empty array) | truthy | **falsy** |
-| `"0"` (string zero) | falsy | **truthy** |
+| Value               | JavaScript | JSONLogic  |
+| ------------------- | ---------- | ---------- |
+| `[]` (empty array)  | truthy     | **falsy**  |
+| `"0"` (string zero) | falsy      | **truthy** |
 
 ---
 
@@ -401,17 +392,17 @@ JSONLogic has its **own specification** for truthiness that differs from JavaScr
 
 ```javascript
 // Add single operation
-jsonLogic.add_operation("operationName", functionReference);
+jsonLogic.add_operation('operationName', functionReference);
 
 // Add built-in function
-jsonLogic.add_operation("sqrt", Math.sqrt);
+jsonLogic.add_operation('sqrt', Math.sqrt);
 
 // Add library of operations
-jsonLogic.add_operation("Math", Math);
+jsonLogic.add_operation('Math', Math);
 // Use as: { "Math.abs": -42 }  // returns 42
 
 // Custom function example
-jsonLogic.add_operation("plus", function(a, b) {
+jsonLogic.add_operation('plus', function (a, b) {
   return a + b;
 });
 // Use as: { "plus": [2, 3] }  // returns 5
@@ -430,15 +421,19 @@ jsonLogic.add_operation("plus", function(a, b) {
 ```json
 {
   "if": [
-    { "==": [{ "%": [{ "var": "i" }, 15] }, 0] }, "fizzbuzz",
-    { "==": [{ "%": [{ "var": "i" }, 3] }, 0] }, "fizz",
-    { "==": [{ "%": [{ "var": "i" }, 5] }, 0] }, "buzz",
+    { "==": [{ "%": [{ "var": "i" }, 15] }, 0] },
+    "fizzbuzz",
+    { "==": [{ "%": [{ "var": "i" }, 3] }, 0] },
+    "fizz",
+    { "==": [{ "%": [{ "var": "i" }, 5] }, 0] },
+    "buzz",
     { "var": "i" }
   ]
 }
 ```
 
 Usage:
+
 ```javascript
 for (var i = 1; i <= 30; i++) {
   console.log(jsonLogic.apply(fizzbuzz_rule, { i: i }));
@@ -450,16 +445,19 @@ for (var i = 1; i <= 30; i++) {
 ## Common Patterns
 
 ### Null-safe property access
+
 ```json
 { "var": ["user.name", "Anonymous"] }
 ```
 
 ### Range validation
+
 ```json
 { "<=": [0, { "var": "value" }, 100] }
 ```
 
 ### Multiple condition check
+
 ```json
 {
   "and": [
@@ -471,18 +469,16 @@ for (var i = 1; i <= 30; i++) {
 ```
 
 ### Dynamic field access
+
 ```json
 { "var": { "cat": ["items.", { "var": "index" }] } }
 ```
 
 ### Conditional default
+
 ```json
 {
-  "if": [
-    { "var": "premium" },
-    { "var": "premiumPrice" },
-    { "var": "standardPrice" }
-  ]
+  "if": [{ "var": "premium" }, { "var": "premiumPrice" }, { "var": "standardPrice" }]
 }
 ```
 
